@@ -1,35 +1,33 @@
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const express = require('express');
 const app = express();
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
-const port = 3000;
+const port = process.env.PORT || 3000;
 //midleware
 app.use(cors());
 app.use(express.json());
 
-// const verifyJWT = (req, res, next) => {
-//     const authorization = req.headers.authorization;
-//     if (!authorization) {
-//         return res.status(401).send({ error: true, message: 'unauthorized access' });
-//     }
-//     // bearer token
-//     const token = authorization.split(' ')[1];
+const verifyJWT = (req, res, next) => {
+    const authorization = req.headers.authorization;
+    if (!authorization) {
+        return res.status(401).send({ error: true, message: 'unauthorized access' });
+    }
+    // bearer token
+    const token = authorization.split(' ')[1];
 
-//     jwt.verify(token, process.env.SECRET_TOKEN, (err, decoded) => {
-//         if (err) {
-//             return res.status(401).send({ error: true, message: 'unauthorized access' })
-//         }
-//         req.decoded = decoded;
-//         next();
-//     })
-// }
-console.log(process.env.DATABASE_PASS)
-//mongodb work from here
+    jwt.verify(token, process.env.SECRET_TOKEN, (err, decoded) => {
+        if (err) {
+            return res.status(401).send({ error: true, message: 'unauthorized access' })
+        }
+        req.decoded = decoded;
+        next();
+    })
+}
 
-
-const uri = process.env.URI;
+//mongodb work from here 
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const uri = `mongodb://127.0.0.1:27017`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -43,7 +41,6 @@ const client = new MongoClient(uri, {
 async function run() {
     try {
         const usersCollection = client.db("TriangleSports").collection("userDb");
-
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
 
