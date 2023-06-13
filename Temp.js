@@ -25,6 +25,9 @@ const verifyJWT = (req, res, next) => {
     })
 }
 
+
+
+
 //mongodb work from here 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const { Console } = require('console');
@@ -41,6 +44,9 @@ const client = new MongoClient(uri, {
 
 async function run() {
     try {
+
+        // database conection 
+
         const usersCollection = client.db("TriangleSports").collection("userDb");
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
@@ -50,6 +56,26 @@ async function run() {
             const token = jwt.sign(user, process.env.SECRET_TOKEN, { expiresIn: '1h' })
             res.send({ token })
         })
+        //verfy admin with jwt token from mongodb
+        const verifyAdmin = async (req, res, next) => {
+            const email = req.decoded.email;
+            const query = { email: email }
+            const user = await usersCollection.findOne(query);
+            if (user?.role !== 'admin') {
+                return res.status(403).send({ error: true, message: 'forbidden message' });
+            }
+            next();
+        }
+        //verfy Instractor with jwt token from mongodb
+        const verifyInstractor = async (req, res, next) => {
+            const email = req.decoded.email;
+            const query = { email: email }
+            const user = await usersCollection.findOne(query);
+            if (user?.role !== 'instractor') {
+                return res.status(403).send({ error: true, message: 'forbidden message' });
+            }
+            next();
+        }
         //users api
 
         app.post('/users', async (req, res) => {
@@ -64,6 +90,35 @@ async function run() {
             const result = await usersCollection.insertOne(user);
             res.send(result);
         });
+
+        // admin check 
+        app.get('/users/admin/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+
+            if (req.decoded.email !== email) {
+                res.send({ admin: false })
+            }
+
+            const query = { email: email }
+            const user = await usersCollection.findOne(query);
+            const result = { admin: user?.role === 'admin' }
+            res.send(result);
+        })
+        // Instractor cheek 
+        app.get('/users/instractor/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+
+            if (req.decoded.email !== email) {
+                res.send({ admin: false })
+            }
+
+            const query = { email: email }
+            const user = await usersCollection.findOne(query);
+            const result = { admin: user?.role === 'instractor' }
+            res.send(result);
+        })
+
+
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
