@@ -27,6 +27,7 @@ const verifyJWT = (req, res, next) => {
 
 //mongodb work from here 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const { Console } = require('console');
 const uri = `mongodb://127.0.0.1:27017`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -43,7 +44,12 @@ async function run() {
         const usersCollection = client.db("TriangleSports").collection("userDb");
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
-
+        //jwt token implement
+        app.post('/jwt', (req, res) => {
+            const user = req.body;
+            const token = jwt.sign(user, process.env.SECRET_TOKEN, { expiresIn: '1h' })
+            res.send({ token })
+        })
         //users api
 
         app.post('/users', async (req, res) => {
