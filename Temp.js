@@ -7,6 +7,7 @@ const port = process.env.PORT || 3000;
 //midleware
 app.use(cors());
 app.use(express.json());
+// console.log(process.env.SECRET_TOKEN);
 
 const verifyJWT = (req, res, next) => {
     const authorization = req.headers.authorization;
@@ -18,6 +19,7 @@ const verifyJWT = (req, res, next) => {
 
     jwt.verify(token, process.env.SECRET_TOKEN, (err, decoded) => {
         if (err) {
+            console.log('hit here');
             return res.status(401).send({ error: true, message: 'unauthorized access' })
         }
         req.decoded = decoded;
@@ -94,7 +96,7 @@ async function run() {
         // admin check 
         app.get('/users/admin/:email', verifyJWT, async (req, res) => {
             const email = req.params.email;
-
+            console.log(email);
             if (req.decoded.email !== email) {
                 res.send({ admin: false })
             }
@@ -102,19 +104,20 @@ async function run() {
             const query = { email: email }
             const user = await usersCollection.findOne(query);
             const result = { admin: user?.role === 'admin' }
+            console.log(result);
             res.send(result);
         })
         // Instractor cheek 
-        app.get('/users/instractor/:email', verifyJWT, async (req, res) => {
+        app.get('/users/instructor/:email', verifyJWT, async (req, res) => {
             const email = req.params.email;
-
+            console.log('instructor email', email);
             if (req.decoded.email !== email) {
-                res.send({ admin: false })
+                res.send({ instructor: false })
             }
-
             const query = { email: email }
             const user = await usersCollection.findOne(query);
-            const result = { admin: user?.role === 'instractor' }
+            const result = { instructor: user?.role === 'instractor' }
+            console.log(result);
             res.send(result);
         })
 
