@@ -19,7 +19,7 @@ const verifyJWT = (req, res, next) => {
 
     jwt.verify(token, process.env.SECRET_TOKEN, (err, decoded) => {
         if (err) {
-            console.log('hit here');
+
             return res.status(401).send({ error: true, message: 'unauthorized access' })
         }
         req.decoded = decoded;
@@ -101,7 +101,7 @@ async function run() {
         // admin check 
         app.get('/users/admin/:email', verifyJWT, async (req, res) => {
             const email = req.params.email;
-            console.log(email);
+
             if (req.decoded.email !== email) {
                 res.send({ admin: false })
             }
@@ -109,20 +109,20 @@ async function run() {
             const query = { email: email }
             const user = await usersCollection.findOne(query);
             const result = { admin: user?.role === 'admin' }
-            console.log(result);
+
             res.send(result);
         })
         // Instractor cheek 
         app.get('/users/instructor/:email', verifyJWT, async (req, res) => {
             const email = req.params.email;
-            console.log('instructor email', email);
+
             if (req.decoded.email !== email) {
                 res.send({ instructor: false })
             }
             const query = { email: email }
             const user = await usersCollection.findOne(query);
             const result = { instructor: user?.role === 'instractor' }
-            console.log(result);
+
             res.send(result);
         })
 
@@ -141,7 +141,8 @@ async function run() {
         });
         //    class api
         app.get('/classes', async (req, res) => {
-            const result = await classesCollection.find().toArray();
+            const query = { status: 'approved' };
+            const result = await classesCollection.find(query).toArray();
             res.send(result);
         });
         //selected booking related api
@@ -162,7 +163,11 @@ async function run() {
             res.send(result);
         });
 
-
+        app.post('/selecteds', async (req, res) => {
+            const item = req.body;
+            const result = await selectedCollection.insertOne(item);
+            res.send(result);
+        })
 
 
         // Send a ping to confirm a successful connection
