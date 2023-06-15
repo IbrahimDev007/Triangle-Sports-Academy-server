@@ -50,6 +50,8 @@ async function run() {
         // database conection 
 
         const usersCollection = client.db("TriangleSports").collection("userDb");
+        const popularCollection = client.db("TriangleSports").collection("popular");
+
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
         //jwt token implement
@@ -121,6 +123,12 @@ async function run() {
             res.send(result);
         })
 
+        //popular api
+
+        app.get('/popular', async (req, res) => {
+            const result = await popularCollection.find().toArray();
+            res.send(result);
+        });
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
