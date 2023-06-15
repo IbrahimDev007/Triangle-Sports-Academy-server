@@ -52,6 +52,8 @@ async function run() {
         const usersCollection = client.db("TriangleSports").collection("userDb");
         const popularCollection = client.db("TriangleSports").collection("popular");
         const instructorCollection = client.db("TriangleSports").collection("instructorDB");
+        const classesCollection = client.db("TriangleSports").collection("classesDB");
+        const selectedCollection = client.db("TriangleSports").collection("bookedDB");
 
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
@@ -137,6 +139,31 @@ async function run() {
             const result = await instructorCollection.find().toArray();
             res.send(result);
         });
+        //    class api
+        app.get('/classes', async (req, res) => {
+            const result = await classesCollection.find().toArray();
+            res.send(result);
+        });
+        //selected booking related api
+        app.get('/selecteds', verifyJWT, async (req, res) => {
+            const email = req.query.email;
+
+            if (!email) {
+                res.send([]);
+            }
+
+            const decodedEmail = req.decoded.email;
+            if (email !== decodedEmail) {
+                return res.status(403).send({ error: true, message: 'forbidden access' })
+            }
+
+            const query = { email: email };
+            const result = await selectedCollection.find(query).toArray();
+            res.send(result);
+        });
+
+
+
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
