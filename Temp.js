@@ -51,6 +51,7 @@ async function run() {
 
         const usersCollection = client.db("TriangleSports").collection("userDb");
         const popularCollection = client.db("TriangleSports").collection("popular");
+        const instructorCollection = client.db("TriangleSports").collection("instructorDB");
 
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
@@ -127,6 +128,13 @@ async function run() {
 
         app.get('/popular', async (req, res) => {
             const result = await popularCollection.find().toArray();
+            res.send(result);
+        });
+
+        //instructor api
+
+        app.get('/instructor', async (req, res) => {
+            const result = await instructorCollection.find().toArray();
             res.send(result);
         });
 
