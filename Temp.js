@@ -33,6 +33,7 @@ const verifyJWT = (req, res, next) => {
 //mongodb work from here 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const { Console } = require('console');
+
 const uri = `mongodb://127.0.0.1:27017`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -84,6 +85,7 @@ async function run() {
             next();
         }
         //users api
+        // ============================================
 
         app.post('/users', async (req, res) => {
             const user = req.body;
@@ -97,6 +99,44 @@ async function run() {
             const result = await usersCollection.insertOne(user);
             res.send(result);
         });
+
+        app.get('/users', verifyJWT, verifyAdmin, async (req, res) => {
+            const users = await usersCollection.find().toArray()
+            res.send(users)
+        })
+
+        app.delete('/users/:id', verifyJWT, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await usersCollection.deleteOne(query);
+            res.send(result);
+        })
+        app.patch('/users/:id', verifyJWT, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const { role } = req.query;
+            console.log(id);
+            const filter = { _id: new ObjectId(id) };
+            const updateDoc = {
+                $set: {
+                    role: role
+                },
+            };
+            const result = await usersCollection.updateOne(filter, updateDoc);
+            res.send(result);
+
+        })
+        app.patch('/admin/feedback/:id', verifyJWT, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const feedback = req.body;
+            const filter = { _id: new ObjectId(id) };
+            const updateDoc = {
+                $set: feedback
+
+            };
+            const result = await classesCollection.updateOne(filter, updateDoc);
+            res.send(result);
+
+        })
 
         // admin check 
         app.get('/users/admin/:email', verifyJWT, async (req, res) => {
@@ -139,12 +179,52 @@ async function run() {
             const result = await instructorCollection.find().toArray();
             res.send(result);
         });
+
+
         //    class api
         app.get('/classes', async (req, res) => {
             const query = { status: 'approved' };
             const result = await classesCollection.find(query).toArray();
             res.send(result);
         });
+        app.delete('/classes/:id', verifyJWT, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await classesCollection.deleteOne(query);
+            res.send(result);
+        })
+        app.patch('/classes/:id', verifyJWT, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const { status } = req.query;
+            console.log(id);
+            const filter = { _id: new ObjectId(id) };
+            const updateDoc = {
+                $set: {
+                    status: status
+                },
+            };
+            const result = await classesCollection.updateOne(filter, updateDoc);
+            res.send(result);
+
+        })
+        app.post('/classes', verifyJWT, verifyInstractor, async (req, res) => {
+            const classes = req.body;
+            const result = await classesCollection.insertOne(classes);
+            res.send(result);
+        });
+        app.patch('/classes/instructor/:id', verifyJWT, verifyInstractor, async (req, res) => {
+            const id = req.params.id;
+            const updateData = req.body;
+            const filter = { _id: new ObjectId(id) };
+            const updateDoc = {
+                $set: updateData
+
+            };
+            const result = await classesCollection.updateOne(filter, updateDoc);
+            res.send(result);
+
+        })
+
         //selected booking related api
         app.get('/selecteds', verifyJWT, async (req, res) => {
             const email = req.query.email;
@@ -170,6 +250,7 @@ async function run() {
         })
         app.delete('/selecteds/:id', async (req, res) => {
             const id = req.params.id;
+
             const query = { _id: new ObjectId(id) };
             const result = await selectedCollection.deleteOne(query);
             res.send(result);
