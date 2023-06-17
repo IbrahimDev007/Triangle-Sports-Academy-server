@@ -28,8 +28,6 @@ const verifyJWT = (req, res, next) => {
 }
 
 
-
-
 //mongodb work from here 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const { Console } = require('console');
@@ -139,7 +137,7 @@ async function run() {
         })
 
         // admin check 
-        app.get('/users/admin/:email', verifyJWT, async (req, res) => {
+        app.get('/users/admin/:email', verifyJWT, verifyAdmin, async (req, res) => {
             const email = req.params.email;
 
             if (req.decoded.email !== email) {
@@ -153,7 +151,7 @@ async function run() {
             res.send(result);
         })
         // Instractor cheek 
-        app.get('/users/instructor/:email', verifyJWT, async (req, res) => {
+        app.get('/users/instructor/:email', verifyJWT, verifyInstractor, async (req, res) => {
             const email = req.params.email;
 
             if (req.decoded.email !== email) {
@@ -183,8 +181,7 @@ async function run() {
 
         //    class api
         app.get('/classes', async (req, res) => {
-            const query = { status: 'approved' };
-            const result = await classesCollection.find(query).toArray();
+            const result = await classesCollection.find().toArray();
             res.send(result);
         });
         app.delete('/classes/:id', verifyJWT, verifyAdmin, async (req, res) => {
@@ -224,7 +221,15 @@ async function run() {
             res.send(result);
 
         })
-
+        app.get('/classes/instructor/:email', verifyJWT, verifyInstractor, async (req, res) => {
+            const email = req.params.email;
+            console.log(email);
+            const query = {
+                instructorEmail: email
+            }
+            const result = await classesCollection.find(query).toArray();
+            res.send(result);
+        });
         //selected booking related api
         app.get('/selecteds', verifyJWT, async (req, res) => {
             const email = req.query.email;
