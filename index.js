@@ -4,6 +4,7 @@ const cors = require('cors');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const port = process.env.PORT || 3000;
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 //midleware
 app.use(cors());
 app.use(express.json());
@@ -11,8 +12,9 @@ app.use(express.json());
 
 const verifyJWT = (req, res, next) => {
     const authorization = req.headers.authorization;
+    console.log(authorization, "token");
     if (!authorization) {
-        return res.status(401).send({ error: true, message: 'unauthorized access' });
+        return res.status(401).send({ error: true, message: 'unauthorized access  111' });
     }
     // bearer token
     const token = authorization.split(' ')[1];
@@ -20,7 +22,7 @@ const verifyJWT = (req, res, next) => {
     jwt.verify(token, process.env.SECRET_TOKEN, (err, decoded) => {
         if (err) {
 
-            return res.status(401).send({ error: true, message: 'unauthorized access' })
+            return res.status(401).send({ error: true, message: 'unauthorized access  222' })
         }
         req.decoded = decoded;
         next();
@@ -54,22 +56,24 @@ async function run() {
         const instructorCollection = client.db("TriangleSports").collection("instructorDB");
         const classesCollection = client.db("TriangleSports").collection("classesDB");
         const selectedCollection = client.db("TriangleSports").collection("bookedDB");
-
+        const paymentCollection = client.db("TriangleSports").collection("payments");
         // Connect the client to the server	(optional starting in v4.7)
-        await client.connect();
+        // await client.connect();
         //jwt token implement
         app.post('/jwt', (req, res) => {
             const user = req.body;
             const token = jwt.sign(user, process.env.SECRET_TOKEN, { expiresIn: '1h' })
             res.send({ token })
+            // console.log(token);
         })
         //verfy admin with jwt token from mongodb
         const verifyAdmin = async (req, res, next) => {
             const email = req.decoded.email;
             const query = { email: email }
+            console.log(email, "admin");
             const user = await usersCollection.findOne(query);
             if (user?.role !== 'admin') {
-                return res.status(403).send({ error: true, message: 'forbidden message' });
+                return res.status(200).send({ error: true, message: 'forbidden message' });
             }
             next();
         }
@@ -79,7 +83,7 @@ async function run() {
             const query = { email: email }
             const user = await usersCollection.findOne(query);
             if (user?.role !== 'instractor') {
-                return res.status(403).send({ error: true, message: 'forbidden message' });
+                return res.status(200).send({ error: true, message: 'forbidden message' });
             }
             next();
         }
@@ -113,7 +117,7 @@ async function run() {
         app.patch('/users/:id', verifyJWT, verifyAdmin, async (req, res) => {
             const id = req.params.id;
             const { role } = req.query;
-            console.log(id);
+            console.log(id, "update id");
             const filter = { _id: new ObjectId(id) };
             const updateDoc = {
                 $set: {
@@ -212,6 +216,7 @@ async function run() {
         });
         app.patch('/classes/instructor/:id', verifyJWT, verifyInstractor, async (req, res) => {
             const id = req.params.id;
+
             const updateData = req.body;
             const filter = { _id: new ObjectId(id) };
             const updateDoc = {
@@ -224,7 +229,7 @@ async function run() {
         })
         app.get('/classes/instructor/:email', verifyJWT, verifyInstractor, async (req, res) => {
             const email = req.params.email;
-            console.log(email);
+
             const query = {
                 instructorEmail: email
             }
@@ -249,6 +254,15 @@ async function run() {
             res.send(result);
         });
 
+        // enroll
+        app.get('/enroll', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email };
+            const result = await paymentCollection.find(query).toArray();
+            res.send(result);
+        });
+
+
         app.post('/selecteds', async (req, res) => {
             const item = req.body;
             const result = await selectedCollection.insertOne(item);
@@ -262,8 +276,37 @@ async function run() {
             res.send(result);
         })
 
+        //payments getways
+        // create payment intent
+        app.post('/create-payment-intent', async (req, res) => {
+            const { price } = req.body;
+            const amount = parseInt(price * 100);
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: 'usd',
+                payment_method_types: ['card']
+            });
+
+            res.send({
+                clientSecret: paymentIntent.client_secret
+            })
+        })
+
+
+        // payment related api
+        app.post('/payments', async (req, res) => {
+            const payment = req.body;
+            const insertResult = await paymentCollection.insertOne(payment);
+            const query = { _id: { $in: payment.selectedItems.map(id => new ObjectId(id)) } }
+            const deleteResult = await selectedCollection.deleteMany(query)
+
+            // res.send({ insertResult, deleteResult });
+            res.send('work done');
+        })
+
+
         // Send a ping to confirm a successful connection
-        await client.db("admin").command({ ping: 1 });
+        // await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
         // Ensures that the client will close when you finish/error
