@@ -69,8 +69,9 @@ async function run() {
         //verfy admin with jwt token from mongodb
         const verifyAdmin = async (req, res, next) => {
             const email = req.decoded.email;
+            // console.log(email, "verify admin");
             const query = { email: email }
-            console.log(email, "admin");
+            // console.log(email, "admin");
             const user = await usersCollection.findOne(query);
             if (user?.role !== 'admin') {
                 return res.status(200).send({ error: true, message: 'forbidden message' });
@@ -80,9 +81,11 @@ async function run() {
         //verfy Instractor with jwt token from mongodb
         const verifyInstractor = async (req, res, next) => {
             const email = req.decoded.email;
+            console.log(email, "verifyInst  email: ");
             const query = { email: email }
             const user = await usersCollection.findOne(query);
-            if (user?.role !== 'instractor') {
+            console.log(user?.role, "verify instruction");
+            if (user?.role !== 'instructor') {
                 return res.status(200).send({ error: true, message: 'forbidden message' });
             }
             next();
@@ -145,12 +148,13 @@ async function run() {
         app.get('/users/admin/:email', verifyJWT, verifyAdmin, async (req, res) => {
             const email = req.params.email;
 
-            if (req.decoded.email !== email) {
+
+            if (req.decoded.email.toLowerCase() !== email) {
                 res.send({ admin: false })
             }
-
             const query = { email: email }
             const user = await usersCollection.findOne(query);
+            console.log(req.decoded.email.toLowerCase());
             const result = { admin: user?.role === 'admin' }
 
             res.send(result);
@@ -159,12 +163,12 @@ async function run() {
         app.get('/users/instructor/:email', verifyJWT, verifyInstractor, async (req, res) => {
             const email = req.params.email;
 
-            if (req.decoded.email !== email) {
+            if (req.decoded.email.toLowerCase() !== email.toLowerCase()) {
                 res.send({ instructor: false })
             }
             const query = { email: email }
             const user = await usersCollection.findOne(query);
-            const result = { instructor: user?.role === 'instractor' }
+            const result = { instructor: user?.role === 'instructor' }
 
             res.send(result);
         })
@@ -239,11 +243,9 @@ async function run() {
         //selected booking related api
         app.get('/selecteds', verifyJWT, async (req, res) => {
             const email = req.query.email;
-
             if (!email) {
                 res.send([]);
             }
-
             const decodedEmail = req.decoded.email;
             if (email !== decodedEmail) {
                 return res.status(403).send({ error: true, message: 'forbidden access' })
@@ -297,11 +299,33 @@ async function run() {
         app.post('/payments', async (req, res) => {
             const payment = req.body;
             const insertResult = await paymentCollection.insertOne(payment);
-            const query = { _id: { $in: payment.selectedItems.map(id => new ObjectId(id)) } }
-            const deleteResult = await selectedCollection.deleteMany(query)
 
-            // res.send({ insertResult, deleteResult });
-            res.send('work done');
+            const query = { _id: { $in: payment.selectedItems.map(id => new ObjectId(id)) } }
+
+            const selectedDocuments = await selectedCollection.find({}).toArray();
+
+            const query2 = {
+                _id: {
+                    $in: selectedDocuments.map(bok => new ObjectId(bok.bookedId))
+                }
+            };
+            console.log(query2);
+            const updates = await classesCollection.updateMany(
+                query2,
+                {
+                    $inc: {
+                        enroll: 1,
+                        availableSeats: -1
+                    }
+                }
+            );
+
+            const deleteResult = await selectedCollection.deleteMany(query);
+
+            // Rest of your code if needed
+
+            res.send('Work done');
+
         })
 
 
