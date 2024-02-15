@@ -105,19 +105,20 @@ async function run() {
             const result = await usersCollection.insertOne(user);
             res.send(result);
         });
-
-        app.get('/users', verifyJWT, verifyAdmin, async (req, res) => {
+        // verifyJWT, verifyAdmin, 
+        app.get('/users', async (req, res) => {
             const users = await usersCollection.find().toArray()
             res.send(users)
         })
-
-        app.delete('/users/:id', verifyJWT, verifyAdmin, async (req, res) => {
+        // verifyJWT, verifyAdmin, 
+        app.delete('/users/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const result = await usersCollection.deleteOne(query);
             res.send(result);
         })
-        app.patch('/users/:id', verifyJWT, verifyAdmin, async (req, res) => {
+        // verifyJWT, verifyAdmin,
+        app.patch('/users/:id', async (req, res) => {
             const id = req.params.id;
             const { role } = req.query;
             console.log(id, "update id");
@@ -131,7 +132,8 @@ async function run() {
             res.send(result);
 
         })
-        app.patch('/admin/feedback/:id', verifyJWT, verifyAdmin, async (req, res) => {
+        // verifyJWT, verifyAdmin,
+        app.patch('/admin/feedback/:id', async (req, res) => {
             const id = req.params.id;
             const feedback = req.body;
             const filter = { _id: new ObjectId(id) };
@@ -145,13 +147,14 @@ async function run() {
         })
 
         // admin check 
-        app.get('/users/admin/:email', verifyJWT, verifyAdmin, async (req, res) => {
+        // verifyJWT, verifyAdmin,
+        app.get('/users/admin/:email', async (req, res) => {
             const email = req.params.email;
 
 
-            if (req.decoded.email.toLowerCase() !== email) {
-                res.send({ admin: false })
-            }
+            // if (req.decoded.email.toLowerCase() !== email) {
+            //     res.send({ admin: false })
+            // }
             const query = { email: email }
             const user = await usersCollection.findOne(query);
             console.log(req.decoded.email.toLowerCase());
@@ -159,13 +162,14 @@ async function run() {
 
             res.send(result);
         })
-        // Instractor cheek 
-        app.get('/users/instructor/:email', verifyJWT, verifyInstractor, async (req, res) => {
+        // Instractor cheek
+        // verifyJWT, verifyInstractor,
+        app.get('/users/instructor/:email', async (req, res) => {
             const email = req.params.email;
 
-            if (req.decoded.email.toLowerCase() !== email.toLowerCase()) {
-                res.send({ instructor: false })
-            }
+            // if (req.decoded.email.toLowerCase() !== email.toLowerCase()) {
+            //     res.send({ instructor: false })
+            // }
             const query = { email: email }
             const user = await usersCollection.findOne(query);
             const result = { instructor: user?.role === 'instructor' }
@@ -193,13 +197,15 @@ async function run() {
             const result = await classesCollection.find().toArray();
             res.send(result);
         });
-        app.delete('/classes/:id', verifyJWT, verifyAdmin, async (req, res) => {
+        // verifyJWT, verifyAdmin,
+        app.delete('/classes/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const result = await classesCollection.deleteOne(query);
             res.send(result);
         })
-        app.patch('/classes/:id', verifyJWT, verifyAdmin, async (req, res) => {
+        // verifyJWT, verifyAdmin,
+        app.patch('/classes/:id', async (req, res) => {
             const id = req.params.id;
             const { status } = req.query;
             console.log(id);
@@ -213,12 +219,14 @@ async function run() {
             res.send(result);
 
         })
-        app.post('/classes', verifyJWT, verifyInstractor, async (req, res) => {
+        // verifyJWT, verifyInstractor,
+        app.post('/classes', async (req, res) => {
             const classes = req.body;
             const result = await classesCollection.insertOne(classes);
             res.send(result);
         });
-        app.patch('/classes/instructor/:id', verifyJWT, verifyInstractor, async (req, res) => {
+        // verifyJWT, verifyInstractor,
+        app.patch('/classes/instructor/:id', async (req, res) => {
             const id = req.params.id;
 
             const updateData = req.body;
@@ -231,7 +239,8 @@ async function run() {
             res.send(result);
 
         })
-        app.get('/classes/instructor/:email', verifyJWT, verifyInstractor, async (req, res) => {
+        // verifyJWT, verifyInstractor,
+        app.get('/classes/instructor/:email', async (req, res) => {
             const email = req.params.email;
 
             const query = {
@@ -241,15 +250,16 @@ async function run() {
             res.send(result);
         });
         //selected booking related api
-        app.get('/selecteds', verifyJWT, async (req, res) => {
+        // verifyJWT,
+        app.get('/selecteds', async (req, res) => {
             const email = req.query.email;
             if (!email) {
                 res.send([]);
             }
-            const decodedEmail = req.decoded.email;
-            if (email !== decodedEmail) {
-                return res.status(403).send({ error: true, message: 'forbidden access' })
-            }
+            // const decodedEmail = req.decoded.email;
+            // if (email !== decodedEmail) {
+            //     return res.status(403).send({ error: true, message: 'forbidden access' })
+            // }
 
             const query = { email: email };
             const result = await selectedCollection.find(query).toArray();
